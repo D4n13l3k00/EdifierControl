@@ -1,0 +1,67 @@
+name: CI & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Release (Windows x64 MSBuild)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag is on master
+        shell: pwsh
+        run: |
+          git fetch origin master
+          $isOnMaster = git branch -r --contains HEAD | Where-Object { $_ -match 'origin/master' }
+          if (-not $isOnMaster) {
+            Write-Error "Tag $env:GITHUB_REF_NAME must be on origin/master branch!"
+            exit 1
+          }
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build Solution (Release x64)
+        run: msbuild EdifierControl.sln /p:Configuration=Release /p:Platform=x64 /m /v:m
+
+      - name: Run Self-Test
+        run: .\build\Release\EdifierControl.exe --self-test
+
+      - name: Prepare release binary
+        shell: pwsh
+        run: |
+          Copy-Item build/Release/EdifierControl.exe ./EdifierControl.exe -Force
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EdifierControl-windows-x64
+          path: EdifierControl.exe
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: Edifier Control ${{ github.ref_name }}
+          files: EdifierControl.exe
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          make_latest: true

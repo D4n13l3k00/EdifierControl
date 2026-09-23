@@ -1,0 +1,36 @@
+# Build directories
+build/
+build.previous-location/
+dist/
+design/
+out/
+bin/
+x64/
+x86/
+Debug/
+Release/
+
+# Visual Studio / MSBuild
+.vs/
+*.user
+*.suo
+*.sln.docstates
+*.VC.db
+*.VC.opendb
+
+# Intermediate build artifacts
+*.obj
+*.pdb
+*.ilk
+*.idb
+*.tlog
+*.log
+
+# Scratch / temporary debug files
+imgui.ini
+tray_debug.txt
+debug_log.txt
+self-test.txt
+scratch_check_codex.py
+scratch_snippets.py
+codex_edifier_thread.txt
